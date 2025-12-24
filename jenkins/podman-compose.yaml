@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  jenkins-controller:
+    image: jenkins/jenkins:lts-slim-jdk21
+    user: "1000:1000"
+    container_name: jenkins-controller
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - ./jenkins_home:/var/jenkins_home:U
+    restart: never
+    networks:
+      - jenkins_network
+
+  jenkins-agent:
+    image: localhost/jenkins-agent-buildah #this image is a jenkins/inbound-agent:jdk21 with buildah installed
+    container_name: jenkins-agent
+    depends_on:
+      - jenkins-controller
+    environment:
+      JENKINS_URL: http://jenkins-controller:8080
+      JENKINS_AGENT_NAME: jenkins-agent
+      JENKINS_AGENT_SECRET: f27108c104ff140853eed5012608b13be89bdc5bddede159d901ef6072f1ca68
+    command: >
+      -url http://jenkins-controller:8080
+      -name jenkins-agent
+      -secret f27108c104ff140853eed5012608b13be89bdc5bddede159d901ef6072f1ca68
+      -workDir /home/jenkins/agent
+    restart: never
+    networks:
+      - jenkins_network
+
+networks:
+  jenkins_network:
+    driver: bridge

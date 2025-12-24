@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  jenkins-controller:
+    image: jenkins/jenkins:lts-slim-jdk21
+    container_name: jenkins-controller
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - ./jenkins_home:/var/jenkins_home
+    restart: unless-stopped
+    networks:
+      - proxy
+
+  jenkins-agent-docker:
+    image: jenkins-agent-docker-git
+    container_name: jenkins-agent-docker
+    depends_on:
+      - jenkins-controller
+    environment:
+      JENKINS_URL: http://jenkins-controller:8080
+      JENKINS_AGENT_NAME: docker-agent
+      JENKINS_AGENT_SECRET: e5a44934210d62468dc453fd1e181569038ac2f33a972eefb8604f57d4ffc099
+      JENKINS_AGENT_GID: 987
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    user: "1000:987"
+    command: >
+      -url http://jenkins-controller:8080
+      -name docker-agent
+      -secret e5a44934210d62468dc453fd1e181569038ac2f33a972eefb8604f57d4ffc099
+      -workDir /home/jenkins/agent
+    restart: unless-stopped
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true

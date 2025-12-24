@@ -1,0 +1,16 @@
+services:
+  shared-postgres:
+    image: postgres:15-alpine
+    container_name: shared_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-11091998}
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - shared_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  shared_postgres_data:
