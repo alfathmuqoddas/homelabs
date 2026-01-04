@@ -1,0 +1,90 @@
+pipeline {
+  agent {
+    label 'docker-agent'
+  }
+
+  environment {
+    DOCKER_BUILDKIT = "1"
+    REGISTRY = "localhost:5000"
+    IMAGE_NAME = "${env.REPO_NAME}"
+    IMAGE_TAG = "${env.COMMIT_ID}"
+    FULL_IMAGE = "${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+  }
+
+  options {
+    skipDefaultCheckout()
+    disableConcurrentBuilds()
+  }
+
+  stages {
+    stage("Info") {
+      steps {
+        echo "Repo: ${IMAGE_NAME}"
+        echo "Commit Id: ${IMAGE_TAG}"
+        echo "Branch: ${env.BRANCH}"
+        echo "Owner: ${env.REPO_OWNER}"
+      }
+    }
+
+    stage('Validate Env') {
+      steps {
+        script {
+          ['REPO_NAME','COMMIT_ID'].each {
+            if (!env[it]) error("Missing env var: ${it}")
+          }
+        }
+      }
+    }
+
+    stage('Preparation') {
+        steps {
+            sh '''
+            which git || echo "git missing"
+            docker version
+            '''
+        }
+    }
+
+    stage('Checkout') {
+      steps {
+        checkout([
+          $class: 'GitSCM',
+          branches: [[name: '*/main']],
+          userRemoteConfigs: [[
+            url: 'http://gitea.local:3000/alfathmuqoddas/${IMAGE_NAME}',
+            credentialsId: 'gitea-creds'
+          ]]
+        ])
+      }
+    }
+
+    stage('Build Image') {
+      steps {
+        sh """
+          docker build -t ${FULL_IMAGE} .
+        """
+      }
+    }
+
+    stage('Push Image') {
+      steps {
+        sh """
+          docker push ${FULL_IMAGE}
+        """
+      }
+    }
+  }
+
+  post {
+    always {
+      echo "Cleaning workspace"
+      cleanWs(deleteDirs: true, disableDeferredWipeout: true)
+    }
+    failure {
+      echo "Build failed"
+    }
+    success {
+      echo "Image pushed: ${FULL_IMAGE}"
+    }
+  }
+}
