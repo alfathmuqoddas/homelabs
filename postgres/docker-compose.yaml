@@ -11,6 +11,12 @@ services:
       - "5432:5432"
     volumes:
       - shared_postgres_data:/var/lib/postgresql/data
+    networks:
+      - proxy
 
 volumes:
   shared_postgres_data:
+
+networks:
+  proxy:
+    external: true

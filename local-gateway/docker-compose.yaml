@@ -1,0 +1,10 @@
+services:
+  local-gateway:
+    image: nginx:alpine
+    container_name: local-gateway
+    ports:
+      - "7080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
