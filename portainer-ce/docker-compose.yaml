@@ -1,8 +1,8 @@
 services:
   portainer:
-    image: portainer/portainer-ce:lts
+    image: portainer/portainer-ce:alpine-sts
     container_name: portainer-ce
-    restart: always
+    #restart: always
     ports:
       - "8000:8000"
       - "9443:9443"

@@ -2,7 +2,7 @@ services:
   shared-postgres:
     image: postgres:15-alpine
     container_name: shared_postgres
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-11091998}

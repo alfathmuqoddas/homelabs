@@ -9,7 +9,7 @@ services:
       - "50000:50000"
     volumes:
       - ./jenkins_home:/var/jenkins_home
-    restart: unless-stopped
+    #restart: unless-stopped
     networks:
       - proxy
 
@@ -31,7 +31,7 @@ services:
       -name docker-agent
       -secret e5a44934210d62468dc453fd1e181569038ac2f33a972eefb8604f57d4ffc099
       -workDir /home/jenkins/agent
-    restart: unless-stopped
+    #restart: unless-stopped
     networks:
       - proxy
 
