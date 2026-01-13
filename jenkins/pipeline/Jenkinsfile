@@ -100,21 +100,24 @@ pipeline {
 
     stage('Update GitOps Repo') {
       steps {
-        dir("gitops/${APP_PATH}") {
+        dir('gitops') {
           withCredentials([usernamePassword(
             credentialsId: 'gitea-cred',
             usernameVariable: 'GIT_USER',
             passwordVariable: 'GIT_PASS'
           )]) {
             sh """
+              set -euo pipefail
+
               git config user.name "jenkins"
               git config user.email "jenkins@local"
 
-              yq -i '
-                (.images[] | select(.name == strenv(IMAGE_NAME))).newTag = strenv(SHORT_COMMIT)
-              ' kustomization.yaml
+              yq -ei '.images |= map(select(.name == "${REGISTRY}/${IMAGE_NAME}").newTag = "${SHORT_COMMIT}")' ${APP_PATH}/kustomization.yaml
 
-              git add kustomization.yaml
+              git status --short
+              git diff
+
+              git add ${APP_PATH}/kustomization.yaml
               git commit -m "deploy(${IMAGE_NAME}): ${SHORT_COMMIT}" || echo "No changes to commit"
 
               git push http://${GIT_USER}:${GIT_PASS}@gitea.local:3000/alfathmuqoddas/behemoth-app-manifest.git main
@@ -123,8 +126,6 @@ pipeline {
         }
       }
     }
-
-
 
   }
 
