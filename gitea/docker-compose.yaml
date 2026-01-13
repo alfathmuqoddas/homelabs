@@ -2,7 +2,7 @@ services:
   gitea:
     image: docker.gitea.com/gitea:1.25.2
     container_name: gitea
-    #restart: unless-stopped
+    restart: unless-stopped
     hostname: gitea.local
     environment:
       USER_UID: 1000

@@ -5,10 +5,12 @@ pipeline {
 
   environment {
     DOCKER_BUILDKIT = "1"
-    REGISTRY = "localhost:5000"
+    REGISTRY = "registry.local:5000"
     IMAGE_NAME = "${env.REPO_NAME}"
     IMAGE_TAG = "${env.COMMIT_ID}"
     FULL_IMAGE = "${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+    REPO_OWNER = "${env.REPO_OWNER}"
+    APP_PATH = "apps/${IMAGE_NAME}/overlays/prod"
   }
 
   options {
@@ -51,8 +53,8 @@ pipeline {
           $class: 'GitSCM',
           branches: [[name: '*/main']],
           userRemoteConfigs: [[
-            url: 'http://gitea.local:3000/alfathmuqoddas/${IMAGE_NAME}',
-            credentialsId: 'gitea-creds'
+            url: "http://gitea.local:3000/alfathmuqoddas/${IMAGE_NAME}.git",
+            credentialsId: 'gitea-cred'
           ]]
         ])
       }
@@ -73,6 +75,44 @@ pipeline {
         """
       }
     }
+
+    stage('Checkout GitOps Repo') {
+      steps {
+        dir('gitops') {
+          checkout([
+            $class: 'GitSCM',
+            branches: [[name: '*/main']],
+            userRemoteConfigs: [[
+              url: 'http://gitea.local:3000/alfathmuqoddas/behemoth-app-manifest',
+              credentialsId: 'gitea-cred'
+            ]]
+          ])
+        }
+      }
+    }
+
+    stage('Update GitOps Repo') {
+      steps {
+        dir("gitops/${APP_PATH}") {
+          sh """
+            yq -i '
+              .images[] |=
+              select(.name == "${IMAGE_NAME}") |
+              .newTag = "${IMAGE_TAG}"
+            ' kustomization.yaml
+
+            git config user.name "jenkins"
+            git config user.email "jenkins@local"
+
+            git add kustomization.yaml
+            git commit -m "deploy(${IMAGE_NAME}): ${IMAGE_TAG}"
+            git push
+          """
+        }
+      }
+    }
+
+
   }
 
   post {
