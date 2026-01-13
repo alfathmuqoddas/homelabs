@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   jenkins-controller:
     image: jenkins/jenkins:lts-slim-jdk21
