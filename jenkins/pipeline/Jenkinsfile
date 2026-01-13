@@ -82,8 +82,12 @@ pipeline {
           checkout([
             $class: 'GitSCM',
             branches: [[name: '*/main']],
+            doGenerateSubmoduleConfigurations: false,
+            extensions: [
+              [$class: 'LocalBranch', localBranch: 'main']
+            ],
             userRemoteConfigs: [[
-              url: 'http://gitea.local:3000/alfathmuqoddas/behemoth-app-manifest',
+              url: 'http://gitea.local:3000/alfathmuqoddas/behemoth-app-manifest.git',
               credentialsId: 'gitea-cred'
             ]]
           ])
@@ -91,26 +95,35 @@ pipeline {
       }
     }
 
+
     stage('Update GitOps Repo') {
       steps {
         dir("gitops/${APP_PATH}") {
-          sh """
-            yq -i '
-              .images[] |=
-              select(.name == "${IMAGE_NAME}") |
-              .newTag = "${IMAGE_TAG}"
-            ' kustomization.yaml
+          withCredentials([usernamePassword(
+            credentialsId: 'gitea-cred',
+            usernameVariable: 'GIT_USER',
+            passwordVariable: 'GIT_PASS'
+          )]) {
+            sh """
+              git config user.name "jenkins"
+              git config user.email "jenkins@local"
 
-            git config user.name "jenkins"
-            git config user.email "jenkins@local"
+              yq -i '
+                .images[] |=
+                select(.name == "${IMAGE_NAME}") |
+                .newTag = "${IMAGE_TAG}"
+              ' kustomization.yaml
 
-            git add kustomization.yaml
-            git commit -m "deploy(${IMAGE_NAME}): ${IMAGE_TAG}"
-            git push
-          """
+              git add kustomization.yaml
+              git commit -m "deploy(${IMAGE_NAME}): ${IMAGE_TAG}" || echo "No changes to commit"
+
+              git push http://${GIT_USER}:${GIT_PASS}@gitea.local:3000/alfathmuqoddas/behemoth-app-manifest.git main
+            """
+          }
         }
       }
     }
+
 
 
   }
