@@ -23,6 +23,8 @@ services:
       - REGISTRY_URL=http://registry.localhost
       - SINGLE_REGISTRY=true
       - PROXY=true
+      - DELETE_IMAGES=true
+      - SHOW_CONTENT_DIGEST=true
     networks:
       - proxy
     labels:
