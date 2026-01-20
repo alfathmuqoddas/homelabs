@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     environment:
       REGISTRY_STORAGE_DELETE_ENABLED: "true"
+    volumes:
+      - ./registry_data:/var/lib/registry
     networks:
       - proxy
     labels:
@@ -18,7 +20,7 @@ services:
     container_name: registry-ui
     restart: unless-stopped
     environment:
-      - REGISTRY_URL=http://registry:5000
+      - REGISTRY_URL=http://registry.localhost
       - SINGLE_REGISTRY=true
       - PROXY=true
     networks:
